@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+<meta name="description" content="新一代Web应用打包工具Parcel以零配置，快速打包的特点让人印象深刻，不光如此，代码的简单易懂架构清晰，也是很值得我们学习的。"/><link rel="alternate" href="/default" title="ljy" ><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.11.0" />
+<link rel="canonical" href="http://example.com/2018/09/23/parcel中的多线程/"/>
+
+<link rel="stylesheet" type="text/css" href="/lib/fancybox/jquery.fancybox.css" />
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.11.0" />
+
+<script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+<script>
+  window.config = {"leancloud":{"app_id":null,"app_key":null},"toc":true,"fancybox":true,"pjax":"","latex":false};
+</script>
+
+    <title>parcel中的多线程 - ljy</title>
+  <meta name="generator" content="Hexo 5.4.0"></head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">ljy</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list"><a href="/">
+        <li class="mobile-menu-item">Home
+          </li>
+      </a></ul>
+</nav>
+<div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">ljy</a>
+</div>
+
+<nav class="site-navbar"><ul id="menu" class="menu"><li class="menu-item">
+          <a class="menu-item-link" href="/">
+            Home
+            </a>
+        </li>
+      </ul></nav>
+</header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content"><article class="post">
+    <header class="post-header">
+      <h1 class="post-title">parcel中的多线程
+        </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2018-09-23
+        </span></div>
+    </header>
+
+    <div class="post-content"><p>新一代Web应用打包工具Parcel以零配置，快速打包的特点让人印象深刻，不光如此，代码的简单易懂架构清晰，也是很值得我们学习的。<br>本文就来介绍一下parcel是如何利用多线程来提速打包。</p>
+<p>首先来看WorkerFarm的构造函数，主要是mkhandle和this.init这两步。<br>mkhandle返回一个函数赋值给this.run, this.run会在Bundler的loadAsset阶段调用。mkhandle分两种情况使用多线程或者主线程中运行，在一开始会有shouldUseRemoteWorkers的判断，如果当前子线程还没有开起来或者useLocalWorker为false, 则使用主线程运行，warmupWorker就是用来开启子线程用的。如果shouldUseRemoteWorkers为true则开始调用子线程来处理任务。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="title">constructor</span>(<span class="params">options, farmOptions = &#123;&#125;</span>)</span> &#123;</span><br><span class="line">  ...</span><br><span class="line">  <span class="built_in">this</span>.run = <span class="built_in">this</span>.mkhandle(<span class="string">&#x27;run&#x27;</span>);</span><br><span class="line">  <span class="built_in">this</span>.init(options);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="title">mkhandle</span>(<span class="params">method</span>)</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="function">(<span class="params">...args</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">this</span>.shouldUseRemoteWorkers()) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="built_in">this</span>.addCall(method, [...args, <span class="literal">false</span>]);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (<span class="built_in">this</span>.options.warmWorkers &amp;&amp; <span class="built_in">this</span>.shouldStartRemoteWorkers()) &#123;</span><br><span class="line">        <span class="built_in">this</span>.warmupWorker(method, args);</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">return</span> <span class="built_in">this</span>.localWorker[method](...args, <span class="literal">false</span>);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="title">shouldUseRemoteWorkers</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">  <span class="keyword">return</span> (</span><br><span class="line">    !<span class="built_in">this</span>.options.useLocalWorker ||</span><br><span class="line">    (<span class="built_in">this</span>.started &amp;&amp;</span><br><span class="line">      (<span class="built_in">this</span>.warmWorkers &gt;= <span class="built_in">this</span>.children.size || !<span class="built_in">this</span>.options.warmWorkers))</span><br><span class="line">  );</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>init会调用startChild，也就是初始化子线程, 用一个worker来维护与子线程之间的通信, 使用receive接受数据然后根据类型来触发request或者response</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// WorkerFarm.js</span></span><br><span class="line"><span class="function"><span class="title">startChild</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">  <span class="keyword">let</span> worker = <span class="keyword">new</span> Worker(<span class="built_in">this</span>.options);</span><br><span class="line"></span><br><span class="line">  worker.fork(<span class="built_in">this</span>.options.workerPath, <span class="built_in">this</span>.bundlerOptions);</span><br><span class="line"></span><br><span class="line">  worker.on(<span class="string">&#x27;request&#x27;</span>, <span class="function"><span class="params">data</span> =&gt;</span> <span class="built_in">this</span>.processRequest(data, worker));</span><br><span class="line"></span><br><span class="line">  worker.on(<span class="string">&#x27;ready&#x27;</span>, <span class="function">() =&gt;</span> <span class="built_in">this</span>.processQueue());</span><br><span class="line">  worker.on(<span class="string">&#x27;response&#x27;</span>, <span class="function">() =&gt;</span> <span class="built_in">this</span>.processQueue());</span><br><span class="line"></span><br><span class="line">  worker.on(<span class="string">&#x27;error&#x27;</span>, <span class="function"><span class="params">err</span> =&gt;</span> <span class="built_in">this</span>.onError(err, worker));</span><br><span class="line">  worker.once(<span class="string">&#x27;exit&#x27;</span>, <span class="function">() =&gt;</span> <span class="built_in">this</span>.stopWorker(worker));</span><br><span class="line"></span><br><span class="line">  <span class="built_in">this</span>.workers.set(worker.id, worker);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Worker.js</span></span><br><span class="line"><span class="keyword">async</span> <span class="function"><span class="title">fork</span>(<span class="params">forkModule, bundlerOptions</span>)</span> &#123;</span><br><span class="line">  ...</span><br><span class="line">  <span class="built_in">this</span>.child = childProcess.fork(childModule, process.argv, options);</span><br><span class="line"></span><br><span class="line">  <span class="built_in">this</span>.child.on(<span class="string">&#x27;message&#x27;</span>, <span class="function"><span class="params">data</span> =&gt;</span> <span class="built_in">this</span>.receive(data));</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="title">receive</span>(<span class="params">data</span>)</span> &#123;</span><br><span class="line">  ...</span><br><span class="line">  <span class="keyword">if</span> (type === <span class="string">&#x27;request&#x27;</span>) &#123;</span><br><span class="line">    <span class="built_in">this</span>.emit(<span class="string">&#x27;request&#x27;</span>, data);</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (type === <span class="string">&#x27;response&#x27;</span>) &#123;</span><br><span class="line">    ...</span><br><span class="line">    <span class="built_in">this</span>.emit(<span class="string">&#x27;response&#x27;</span>, data);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>processQueue使用轮训的方式来发现空闲worker执行队列中的任务，processRequest则根据awaitResponse来决定是否发送resp给child</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="function"><span class="title">processQueue</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">  ...</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> worker <span class="keyword">of</span> <span class="built_in">this</span>.workers.values()) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">this</span>.callQueue.length) &#123;</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!worker.ready || worker.stopped || worker.isStopping) &#123;</span><br><span class="line">      <span class="keyword">continue</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (worker.calls.size &lt; <span class="built_in">this</span>.options.maxConcurrentCallsPerWorker) &#123;</span><br><span class="line">      worker.call(<span class="built_in">this</span>.callQueue.shift());</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="function"><span class="title">processRequest</span>(<span class="params">data, worker = <span class="literal">false</span></span>)</span> &#123;</span><br><span class="line">  <span class="keyword">let</span> result = &#123;</span><br><span class="line">    idx: data.idx,</span><br><span class="line">    type: <span class="string">&#x27;response&#x27;</span></span><br><span class="line">  &#125;;</span><br><span class="line">  ...</span><br><span class="line">  <span class="keyword">const</span> mod = <span class="built_in">require</span>(location);</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    result.contentType = <span class="string">&#x27;data&#x27;</span>;</span><br><span class="line">    <span class="keyword">if</span> (method) &#123;</span><br><span class="line">      result.content = <span class="keyword">await</span> mod[method](...args);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      result.content = <span class="keyword">await</span> mod(...args);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (awaitResponse) &#123;</span><br><span class="line">    <span class="keyword">if</span> (worker) &#123;</span><br><span class="line">      worker.send(result);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>同样的child 中也有handleResponse和handleRequest, 逻辑很简单和worker中的类似。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">async</span> <span class="function"><span class="title">handleRequest</span>(<span class="params">data</span>)</span> &#123;</span><br><span class="line">  ...</span><br><span class="line">  <span class="keyword">let</span> result = &#123;idx, child, <span class="attr">type</span>: <span class="string">&#x27;response&#x27;</span>&#125;;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    result.contentType = <span class="string">&#x27;data&#x27;</span>;</span><br><span class="line">    <span class="keyword">if</span> (method === <span class="string">&#x27;childInit&#x27;</span>) &#123;</span><br><span class="line">      result.content = <span class="built_in">this</span>.childInit(...args, child);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      result.content = <span class="keyword">await</span> <span class="built_in">this</span>.module[method](...args);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="built_in">this</span>.send(result);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="function"><span class="title">handleResponse</span>(<span class="params">data</span>)</span> &#123;</span><br><span class="line">  <span class="keyword">let</span> idx = data.idx;</span><br><span class="line">  <span class="keyword">let</span> contentType = data.contentType;</span><br><span class="line">  <span class="keyword">let</span> content = data.content;</span><br><span class="line">  <span class="keyword">let</span> call = <span class="built_in">this</span>.responseQueue.get(idx);</span><br><span class="line">  ...</span><br><span class="line">  <span class="built_in">this</span>.responseQueue.delete(idx);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Process the next call</span></span><br><span class="line">  <span class="built_in">this</span>.processQueue();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+      </div>
+      
+      <footer class="post-footer">
+        
+        <nav class="post-nav"><a class="prev" href="/2018/10/30/rxjs%E7%AE%80%E6%98%93%E5%AE%9E%E7%8E%B0/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">rxjs简易实现</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    <a class="next" href="/2018/08/06/Deno%20%E6%BA%90%E7%A0%81%E9%80%9F%E8%A7%88/">
+        <span class="next-text nav-default">Deno 源码速览</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav></footer>
+    </article></div><div class="comments" id="comments"></div></div>
+      </main>
+
+      <footer id="footer" class="footer"><div class="social-links"><a href="mailto:loujiayu7@gmail.com" class="iconfont icon-email" title="email"></a>
+        <a target="_blank" rel="noopener" href="https://github.com/loujiayu" class="iconfont icon-github" title="github"></a>
+        <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    </div><div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" target="_blank" rel="noopener" href="https://github.com/loujiayu">Even</a>
+  </span>
+</div>
+</footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div><script type="text/javascript" src="/lib/jquery/jquery.min.js"></script>
+  <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  <script type="text/javascript" src="/lib/fancybox/jquery.fancybox.pack.js"></script>
+  <script type="text/javascript" src="/js/src/even.js?v=2.11.0"></script>
+</body>
+</html>

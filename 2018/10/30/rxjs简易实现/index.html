@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+<meta name="description" content="新一代Web应用打包工具Parcel以零配置，快速打包的特点让人印象深刻，不光如此，代码的简单易懂架构清晰，也是很值得我们学习的。"/><link rel="alternate" href="/default" title="ljy" ><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.11.0" />
+<link rel="canonical" href="http://example.com/2018/10/30/rxjs简易实现/"/>
+
+<link rel="stylesheet" type="text/css" href="/lib/fancybox/jquery.fancybox.css" />
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.11.0" />
+
+<script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+<script>
+  window.config = {"leancloud":{"app_id":null,"app_key":null},"toc":true,"fancybox":true,"pjax":"","latex":false};
+</script>
+
+    <title>rxjs简易实现 - ljy</title>
+  <meta name="generator" content="Hexo 5.4.0"></head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">ljy</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list"><a href="/">
+        <li class="mobile-menu-item">Home
+          </li>
+      </a></ul>
+</nav>
+<div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">ljy</a>
+</div>
+
+<nav class="site-navbar"><ul id="menu" class="menu"><li class="menu-item">
+          <a class="menu-item-link" href="/">
+            Home
+            </a>
+        </li>
+      </ul></nav>
+</header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content"><article class="post">
+    <header class="post-header">
+      <h1 class="post-title">rxjs简易实现
+        </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2018-10-30
+        </span></div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Observable%E4%B8%8EObserver"><span class="toc-text">Observable与Observer</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%94%AF%E6%8C%81unsubscribe"><span class="toc-text">支持unsubscribe</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Operator"><span class="toc-text">Operator</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Subject"><span class="toc-text">Subject</span></a></li></ol>
+    </div>
+  </div><div class="post-content"><p>rxjs是一个响应式编程工具，其中有三个重要的概念Observer, Observable, Subject.</p>
+<p>我在一开始使用的时候把它当黑盒子用，所以用得即死板又缩手缩脚，之后花了一些时间来研究它的内部实现，发现并没有想象中的那么复杂，下面就是rxjs的实现过程。本文源码[<a target="_blank" rel="noopener" href="https://github.com/loujiayu/prxjs]">https://github.com/loujiayu/prxjs]</a></p>
+<h3 id="Observable与Observer"><a href="#Observable与Observer" class="headerlink" title="Observable与Observer"></a>Observable与Observer</h3><p>Observable成为可观察对象，Observer观察者，一开始接触rxjs的时候很容易弄混。<br>Observable最基本的创建方法就是使用create, 传入一个函数，我们暂时称为fn，这个fn会接受一个observer, subscribe就相当于是执行fn。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> observable = Rx.Observable</span><br><span class="line">	.create(<span class="function"><span class="keyword">function</span>(<span class="params">observer</span>) </span>&#123;</span><br><span class="line">		observer.next(<span class="string">&#x27;A&#x27;</span>);</span><br><span class="line">		observer.next(<span class="string">&#x27;B&#x27;</span>);</span><br><span class="line">  &#125;)</span><br><span class="line">observable.subscribe(<span class="function"><span class="keyword">function</span>(<span class="params">value</span>) </span>&#123;</span><br><span class="line">	<span class="built_in">console</span>.log(value);</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<p>上面这段代码会依次打印出A, B.<br>subscribe传入的参数具备next, error, complete三个方法，如果传入的是一个function, 我们就回把这个function当作next处理，error和complete使用默认函数赋值，为了便于理解上面的subscribe相当于这面这段代码。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">observable.subscribe(&#123;</span><br><span class="line">  next: <span class="function"><span class="keyword">function</span>(<span class="params">value</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(value)</span><br><span class="line">  &#125;,</span><br><span class="line">  error: <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;&#125;,</span><br><span class="line">  complete: <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;&#125;</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<p>根据上面的功能描述，现在来手动的构造一个Observable和Observer</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Observable</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="title">constructor</span>(<span class="params">subscribe</span>)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>._subscribe = subscribe;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="title">subscribe</span>(<span class="params">observerOrNext</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">const</span> observer = <span class="keyword">new</span> Observer(observerOrNext)</span><br><span class="line">    <span class="built_in">this</span>._subscribe(observer)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Observer</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="title">constructor</span>(<span class="params">next, error, complete</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">switch</span>(<span class="built_in">arguments</span>.length) &#123;</span><br><span class="line">      <span class="keyword">case</span> <span class="number">0</span>:</span><br><span class="line">        <span class="built_in">this</span>.destination = <span class="built_in">this</span>.safeObserver(emptyObserver)</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      <span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">        <span class="keyword">if</span> (next <span class="keyword">instanceof</span> Observer) &#123;</span><br><span class="line">          <span class="built_in">this</span>.destination = next;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          <span class="built_in">this</span>.destination = <span class="built_in">this</span>.safeObserver(next)</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">      <span class="keyword">default</span>:</span><br><span class="line">        <span class="built_in">this</span>.destination = <span class="built_in">this</span>.safeObserver(next, error, complete)</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="title">safeObserver</span>(<span class="params">destOrNext, error, complete</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">let</span> next;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">typeof</span> destOrNext === <span class="string">&#x27;function&#x27;</span>) &#123;</span><br><span class="line">      next = destOrNext;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (destOrNext) &#123;</span><br><span class="line">      next = destOrNext.next || <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;&#125;;</span><br><span class="line">      error = destOrNext.error || <span class="function"><span class="keyword">function</span>(<span class="params">err</span>) </span>&#123; </span><br><span class="line">        <span class="keyword">throw</span> err </span><br><span class="line">      &#125;;</span><br><span class="line">      complete = destOrNext.complete || <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;&#125;;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> &#123;</span><br><span class="line">      next,</span><br><span class="line">      error,</span><br><span class="line">      complete</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="title">next</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.destination.next(value)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="title">error</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.destination.error(value)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="title">complete</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.destination.complete(value)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="支持unsubscribe"><a href="#支持unsubscribe" class="headerlink" title="支持unsubscribe"></a>支持unsubscribe</h3><p>subscribe的返回值用来unsubscribe, 而且在error和complete之后也无法运行next,所以我们引入一个变量isStopped来标记当前Observer是否可用，改写如下</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="title">subscribe</span>(<span class="params">observerOrNext</span>)</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> observer = <span class="keyword">new</span> Observer(observerOrNext)</span><br><span class="line">  <span class="built_in">this</span>._subscribe(observer)</span><br><span class="line">  <span class="keyword">return</span> observer</span><br><span class="line">&#125;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Observer</span> </span>&#123;</span><br><span class="line">  ...</span><br><span class="line">  <span class="function"><span class="title">next</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">this</span>.isStopped) &#123;</span><br><span class="line">      <span class="built_in">this</span>.destination.next(value)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="title">error</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">this</span>.isStopped) &#123;</span><br><span class="line">      <span class="built_in">this</span>.destination.error(value)</span><br><span class="line">      <span class="built_in">this</span>.unsubscribe()</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="title">complete</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">this</span>.isStopped) &#123;</span><br><span class="line">      <span class="built_in">this</span>.destination.complete(value)</span><br><span class="line">      <span class="built_in">this</span>.unsubscribe()</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="title">unsubscribe</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.isStopped = <span class="literal">true</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以上一个最简易的rxjs就制作完成了，但是还缺少Operator，rxjs的大部分功能都是需要Operator来支撑，如下例</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Rx.Observable.fromEvent(node, <span class="string">&#x27;input&#x27;</span>)</span><br><span class="line">  .map(<span class="function"><span class="params">event</span> =&gt;</span> event.target.value)</span><br><span class="line">  .filter(<span class="function"><span class="params">value</span> =&gt;</span> value.length &gt;= <span class="number">2</span>)</span><br><span class="line">  .subscribe(<span class="function"><span class="params">value</span> =&gt;</span> &#123;&#125;);</span><br></pre></td></tr></table></figure>
+
+<h3 id="Operator"><a href="#Operator" class="headerlink" title="Operator"></a>Operator</h3><p>Operator的功能应该也是rxjs实现中的难点和重点。首先我捋一下Operator的功能</p>
+<ul>
+<li>返回一个observable</li>
+<li>值的传递</li>
+<li>operator调用之后需要执行原先的observable<br>改写subscribe, 如果遇到有operator的话调用operator</li>
+</ul>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="title">subscribe</span>(<span class="params">observerOrNext</span>)</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> observer = <span class="keyword">new</span> Observer(observerOrNext)</span><br><span class="line">  <span class="keyword">if</span> (<span class="built_in">this</span>.operator) &#123;</span><br><span class="line">    <span class="built_in">this</span>.operator.call(observer, <span class="built_in">this</span>.source)</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>._subscribe(observer)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> observer</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="title">map</span>(<span class="params">callback</span>)</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> observable = <span class="keyword">new</span> Observable()</span><br><span class="line">  observable.source = <span class="built_in">this</span></span><br><span class="line">  observable.operator = &#123;</span><br><span class="line">    call: <span class="function"><span class="keyword">function</span>(<span class="params">observer, source</span>) </span>&#123;</span><br><span class="line">      <span class="keyword">const</span> newObserver = <span class="keyword">new</span> MapObserver(observer, callback)</span><br><span class="line">      <span class="keyword">return</span> source.subscribe(newObserver)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> observable;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>先在map中用<code>observable.source = this</code>保存原来的observable，然后定义operator.call。由于仍旧需要原来的observable来subscribe，所以需要传入一个支持map的observer, 所以我们再次构造一个MapObserver，该类继承于Observer.</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MapObserver</span> <span class="keyword">extends</span> <span class="title">Observer</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="title">constructor</span>(<span class="params">observer, callback</span>)</span> &#123;</span><br><span class="line">    <span class="built_in">super</span>(observer)</span><br><span class="line">    <span class="built_in">this</span>.callback = callback</span><br><span class="line">    <span class="built_in">this</span>.next = <span class="built_in">this</span>.next.bind(<span class="built_in">this</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="title">next</span>(<span class="params">value</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      <span class="built_in">this</span>.destination.next(<span class="built_in">this</span>.callback(value))</span><br><span class="line">    &#125; <span class="keyword">catch</span> (error) &#123;</span><br><span class="line">      <span class="built_in">this</span>.destination.error(error)</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们可以测试一下, 输出结果应该是2，3，4，complete;</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Observable = <span class="built_in">require</span>(<span class="string">&#x27;./observable&#x27;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// observable test</span></span><br><span class="line"><span class="keyword">const</span> observable = <span class="keyword">new</span> Observable(<span class="function"><span class="keyword">function</span>(<span class="params">observer</span>) </span>&#123;</span><br><span class="line">  observer.next(<span class="number">1</span>)</span><br><span class="line">  observer.next(<span class="number">2</span>)</span><br><span class="line">  observer.next(<span class="number">3</span>)</span><br><span class="line">  observer.complete()</span><br><span class="line">  observer.next(<span class="number">00</span>)</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> observer = &#123;</span><br><span class="line">  next: <span class="function"><span class="keyword">function</span>(<span class="params">value</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(value)</span><br><span class="line">  &#125;,</span><br><span class="line">  complete: <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;complete!&#x27;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">observable.map(<span class="function"><span class="params">d</span> =&gt;</span> d + <span class="number">1</span>).subscribe(observer)</span><br></pre></td></tr></table></figure>
+
+<h3 id="Subject"><a href="#Subject" class="headerlink" title="Subject"></a>Subject</h3><p>subject我们可以把它看作即是Observable又是Observer，也就是说同时拥有subscribe, next, error,complete方法，可以做到多个observer同时触发。<br>结合上面的描述我们那很容易的可以构造一个Subject。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Subject</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="title">constructor</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.observers = []</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="title">subscribe</span>(<span class="params">observer</span>)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.observers.push(observer)</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="title">next</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.observers.forEach(<span class="function"><span class="params">o</span> =&gt;</span> o.next(value))</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="title">error</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.observers.forEach(<span class="function"><span class="params">o</span> =&gt;</span> o.error(value))</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="title">complete</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.observers.forEach(<span class="function"><span class="params">o</span> =&gt;</span> o.complete(value))</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以上是简易版的rxjs，当然官方的rxjs在此基础上增加了很多功能，类似AsyncSubject，WebSocketSubject和其他各种operator，但主要框架搭好后是不是觉得再来增加这些模块也不是什么难事了？希望通过上面的文章可以让大家对rxjs更加了解。</p>
+
+      </div>
+      
+      <footer class="post-footer">
+        
+        <nav class="post-nav"><a class="next" href="/2018/09/23/parcel%E4%B8%AD%E7%9A%84%E5%A4%9A%E7%BA%BF%E7%A8%8B/">
+        <span class="next-text nav-default">parcel中的多线程</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav></footer>
+    </article></div><div class="comments" id="comments"></div></div>
+      </main>
+
+      <footer id="footer" class="footer"><div class="social-links"><a href="mailto:loujiayu7@gmail.com" class="iconfont icon-email" title="email"></a>
+        <a target="_blank" rel="noopener" href="https://github.com/loujiayu" class="iconfont icon-github" title="github"></a>
+        <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    </div><div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" target="_blank" rel="noopener" href="https://github.com/loujiayu">Even</a>
+  </span>
+</div>
+</footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div><script type="text/javascript" src="/lib/jquery/jquery.min.js"></script>
+  <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  <script type="text/javascript" src="/lib/fancybox/jquery.fancybox.pack.js"></script>
+  <script type="text/javascript" src="/js/src/even.js?v=2.11.0"></script>
+</body>
+</html>
