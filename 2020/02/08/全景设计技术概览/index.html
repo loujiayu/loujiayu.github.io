@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+<meta name="description" content="本文概要性的介绍了开发全景设计的技术实现"/><link rel="alternate" href="/default" title="ljy" ><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.11.0" />
+<link rel="canonical" href="http://example.com/2020/02/08/全景设计技术概览/"/>
+
+<link rel="stylesheet" type="text/css" href="/lib/fancybox/jquery.fancybox.css" />
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.11.0" />
+
+<script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+<script>
+  window.config = {"leancloud":{"app_id":null,"app_key":null},"toc":true,"fancybox":true,"pjax":"","latex":false};
+</script>
+
+    <title>全景设计技术概览 - ljy</title>
+  <meta name="generator" content="Hexo 5.4.0"></head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">ljy</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list"><a href="/">
+        <li class="mobile-menu-item">Home
+          </li>
+      </a></ul>
+</nav>
+<div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">ljy</a>
+</div>
+
+<nav class="site-navbar"><ul id="menu" class="menu"><li class="menu-item">
+          <a class="menu-item-link" href="/">
+            Home
+            </a>
+        </li>
+      </ul></nav>
+</header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content"><article class="post">
+    <header class="post-header">
+      <h1 class="post-title">全景设计技术概览
+        </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2020-02-08
+        </span></div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E7%9A%84%E5%A4%A9%E7%A9%BA%E7%9B%92%E5%85%A8%E6%99%AF%E5%9B%BE"><span class="toc-text">基本的天空盒全景图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9D%90%E6%A0%87%E7%B3%BB%E7%BB%9F"><span class="toc-text">坐标系统</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B7%B1%E5%BA%A6%E5%85%B3%E7%B3%BB"><span class="toc-text">深度关系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%A4%E4%BA%92%E4%BC%98%E5%8C%96"><span class="toc-text">交互优化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AF%AD"><span class="toc-text">结语</span></a></li></ol>
+    </div>
+  </div><div class="post-content"><h2 id="基本的天空盒全景图"><a href="#基本的天空盒全景图" class="headerlink" title="基本的天空盒全景图"></a>基本的天空盒全景图</h2><p>现有一份全景图，以cube projection方式投影如下：</p>
+<p><img src="https://user-images.githubusercontent.com/5572591/111744407-29bbae80-88c6-11eb-846f-2b2cb2b9cd75.png" alt="Image"></p>
+<p>把这份图片贴在skybox上，设置为背面可见，就形成了一个基本的全景空间。<br><img src="https://user-images.githubusercontent.com/5572591/111744423-2fb18f80-88c6-11eb-8fdd-0334e2274892.png" alt="Image"></p>
+<p>把这样一个床头柜放进全景图中：<a target="_blank" rel="noopener" href="https://www.kujiale.com/festatic/3dviewer?obsbgid=3FO4FV3GBKE0">https://www.kujiale.com/festatic/3dviewer?obsbgid=3FO4FV3GBKE0</a><br><img src="https://user-images.githubusercontent.com/5572591/111744444-393af780-88c6-11eb-95a0-878bffe37f7a.png" alt="Image"></p>
+<h2 id="坐标系统"><a href="#坐标系统" class="headerlink" title="坐标系统"></a>坐标系统</h2><p>以设计方案中的坐标放置床头柜，得到的结果似乎并不是我们想要的？位置对不上。<br><img src="https://user-images.githubusercontent.com/5572591/111744454-3cce7e80-88c6-11eb-807f-2536087e5e5c.png" alt="Image"></p>
+<p>柜子的坐标毋庸置疑，考虑skybox。首先想象一下全景相机如何拍摄。把相机放在房间中的某个点位上，旋转一圈拍摄360°全景图片。简单假想一下，这样得到的cube projection的6张图中，大部分的线条都是水平或垂直的，不应出现大部分线条倾斜的情况。</p>
+<p>看一下现有的任一张图片，图中的所有线条都是斜的。这说明拍摄时的方向并不与xy轴平行。因此需要得到相机朝向与场景默认前向轴的方向的夹角，并将此旋转偏差体现在cubeMap上。<br><img src="https://user-images.githubusercontent.com/5572591/111744485-4821aa00-88c6-11eb-8ef3-9d924f9621e5.png" alt="Image"></p>
+<p>如下图，LEFT方向是默认的全景相机起始旋转位置，而实际使用的起始旋转位置是下图左的蓝色轴，实际的全景相机起始朝向是下图左的红色轴，二者存在夹角。这种情况下得到的6张图，其方向是下图右的虚线框所示。要把这样的图斜着贴到cube上，只需在对cube应用cubemap时加入旋转分量去采样即可，这个操作相当于旋转cubemap（并非旋转cube）。<br><img src="https://user-images.githubusercontent.com/5572591/111744536-5cfe3d80-88c6-11eb-97e1-a9c065b73523.png" alt="Image"></p>
+<h2 id="深度关系"><a href="#深度关系" class="headerlink" title="深度关系"></a>深度关系</h2><p>旋转cubemap之后，其坐标系统与世界坐标一致，位置看起来没有问题了。但是新的问题来了，床头柜没有被床挡住，深度关系错误。可是，床头柜是模型有其实际深度，床则作为skybox的一部分必然被绘制在无穷远处。如何解决？<br><a target="_blank" rel="noopener" href="https://user-images.githubusercontent.com/5572591/111744552-6091c480-88c6-11eb-8c30-134d2b280d39.png">!Image</a></p>
+<p>首先考虑加载床的模型，这个方法治标不治本。如果想要解决所有的深度关系，就必须把所有物体均以模型形式加载，失去了使用全景图的意义。</p>
+<p>但是，想要正确的深度关系，简单直接的方法只有加载模型。那么，可以考虑只加载模型的几何数据，而不加载任何纹理数据。为此，定义两个概念：前景模型和背景模型。对于那些要操作的、要完整加载的，称之为前景模型；对于那些不需要操作的、只加载几何数据的，称之为背景模型。对于前景模型，按正常流程绘制；对于背景模型，只绘制其深度。这样处理之后，得到正确深度结果。<br><img src="https://user-images.githubusercontent.com/5572591/111744572-67b8d280-88c6-11eb-831d-049c5e9208e0.png" alt="Image"></p>
+<p>以半透明洋红色作为背景模型的材质，可以看到床的几何形状。<br><img src="https://user-images.githubusercontent.com/5572591/111744589-6ab3c300-88c6-11eb-93ca-b7339b7bcedf.png" alt="Image"></p>
+<h2 id="交互优化"><a href="#交互优化" class="headerlink" title="交互优化"></a>交互优化</h2><p>在上述demo的基础上，如果增加前景模型，会发现帧率逐渐降低。因为前景模型的几何网格与贴图分辨率均较高，在低端显卡或者无显卡机器上渲染管线压力较大。为此，考虑交互层面优化手段。</p>
+<p>分析用户的操作习惯，可知旋转相机（查看场景）操作频率远高于操作模型的频率，而旋转相机时没有任何模型发生动态变化。从这个点切入，考虑对全景图+模型合成一张新的全景图（称为全景图1）。在旋转相机时，只渲染合成结果即全景图1即可；在移动模型时，按常规渲染全景图+模型。每次对模型操作结束后，重新生成全景图1。由此提升高频use case下的FPS。</p>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>本文实现了一个基本的全景图+模型的交互应用，并达到基本可用程度。在此基础之上，还可以考虑加入更多特性。例如：加入房间中墙的数据用于做碰撞检测，禁止模型移出房间外；对应用设计定制的SSAO，忽略背景模型和全景图，只处理前景模型之间的遮蔽关系。</p>
+
+      </div>
+      
+      <footer class="post-footer">
+        
+        <nav class="post-nav"><a class="prev" href="/2020/02/10/ECS%E5%9C%A8%E8%AE%BE%E8%AE%A1%E8%BD%AF%E4%BB%B6%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">ECS架构的应用</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    <a class="next" href="/2020/01/25/%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F%E5%B7%A5%E5%85%B7/">
+        <span class="next-text nav-default">js 内存泄漏检测算法</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav></footer>
+    </article></div><div class="comments" id="comments"></div></div>
+      </main>
+
+      <footer id="footer" class="footer"><div class="social-links"><a href="mailto:loujiayu7@gmail.com" class="iconfont icon-email" title="email"></a>
+        <a target="_blank" rel="noopener" href="https://github.com/loujiayu" class="iconfont icon-github" title="github"></a>
+        <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    </div><div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" target="_blank" rel="noopener" href="https://github.com/loujiayu">Even</a>
+  </span>
+</div>
+</footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div><script type="text/javascript" src="/lib/jquery/jquery.min.js"></script>
+  <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  <script type="text/javascript" src="/lib/fancybox/jquery.fancybox.pack.js"></script>
+  <script type="text/javascript" src="/js/src/even.js?v=2.11.0"></script>
+</body>
+</html>

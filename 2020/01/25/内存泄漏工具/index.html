@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+<meta name="description" content="目前开发人员要检测内存泄漏，通常是用chrome devtools 记录snaphost，然后通过retain path来定位代码中的泄漏点，问题在于这些path 并没有和代码产生直接的关联，整个检测的过程很花费时间而且很多时候还不能得到满意的结果."/><link rel="alternate" href="/default" title="ljy" ><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.11.0" />
+<link rel="canonical" href="http://example.com/2020/01/25/内存泄漏工具/"/>
+
+<link rel="stylesheet" type="text/css" href="/lib/fancybox/jquery.fancybox.css" />
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.11.0" />
+
+<script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+<script>
+  window.config = {"leancloud":{"app_id":null,"app_key":null},"toc":true,"fancybox":true,"pjax":"","latex":false};
+</script>
+
+    <title>js 内存泄漏检测算法 - ljy</title>
+  <meta name="generator" content="Hexo 5.4.0"></head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">ljy</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list"><a href="/">
+        <li class="mobile-menu-item">Home
+          </li>
+      </a></ul>
+</nav>
+<div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">ljy</a>
+</div>
+
+<nav class="site-navbar"><ul id="menu" class="menu"><li class="menu-item">
+          <a class="menu-item-link" href="/">
+            Home
+            </a>
+        </li>
+      </ul></nav>
+</header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content"><article class="post">
+    <header class="post-header">
+      <h1 class="post-title">js 内存泄漏检测算法
+        </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2020-01-25
+        </span></div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-text">背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#heap-snapshot%E7%BB%93%E6%9E%84%E5%88%86%E6%9E%90"><span class="toc-text">heap snapshot结构分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A3%80%E6%B5%8B%E8%BF%87%E7%A8%8B"><span class="toc-text">检测过程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Leak-Path"><span class="toc-text">Leak Path</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#getJSObjEdge"><span class="toc-text">getJSObjEdge</span></a></li></ol>
+    </div>
+  </div><div class="post-content"><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>目前开发人员要检测内存泄漏，通常是用chrome devtools 记录snaphost，然后通过retain path来定位代码中的泄漏点，问题在于这些path 并没有和代码产生直接的关联，整个检测的过程很花费时间而且很多时候还不能得到满意的结果.</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> ljya = &#123;&#125;;</span><br><span class="line">ljya.x = [];</span><br><span class="line"> </span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">grow</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  ljya.x.push(<span class="keyword">new</span> <span class="built_in">Array</span>(<span class="number">1000000</span>).join(<span class="string">&#x27;x&#x27;</span>));</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="built_in">document</span>.getElementById(<span class="string">&#x27;grow&#x27;</span>).addEventListener(<span class="string">&#x27;click&#x27;</span>, grow);</span><br></pre></td></tr></table></figure>
+
+<p>上面这段代码很明显存在内存泄漏. 每次点击button 都会在x中push 1兆的字符串。如果我们试图通过snapshot来定位问题，得到的snapshot在memory面板中长这样.</p>
+<p><img src="https://user-images.githubusercontent.com/5572591/111950905-e52a5000-8b1d-11eb-8dd0-5ddfb66d02fb.png" alt="Image"></p>
+<p>定位之后x的distance为6(distance 代表root节点到当前节点的最短路径)，这么一段简单直白的问题代码放到snapshot中分析都需要人工找那么深的路径，如果把它放在一个稍复杂应用中，靠人工去找到问题再从代码中精准定位几乎是不可能的事情。</p>
+<p><img src="https://user-images.githubusercontent.com/5572591/111950921-e9ef0400-8b1d-11eb-8c1f-b2c24e9d5f0e.png" alt="Image"></p>
+<p>上面的面板数据来源只有一个，就是heap-snapshot, 也就说如果我们可以有效的分析heap-snapshot，我们就可以更快捷的找到其中的内存泄漏点.</p>
+<h2 id="heap-snapshot结构分析"><a href="#heap-snapshot结构分析" class="headerlink" title="heap snapshot结构分析"></a>heap snapshot结构分析</h2><p>我们知道的是heap 是一个图结构，通过翻阅v8也可以看到这一点(主要是v8-profile.h)，HeapSnapshot这个类的注释中解释来snapshot的大致结构，代码如下</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * HeapSnapshots record the state of the JS heap at some moment.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">V8_EXPORT</span> <span class="title">HeapSnapshot</span> &#123;</span></span><br><span class="line">  <span class="comment">/** Returns the root node of the heap graph. */</span></span><br><span class="line">  <span class="function"><span class="keyword">const</span> HeapGraphNode* <span class="title">GetRoot</span><span class="params">()</span> <span class="keyword">const</span></span>;</span><br><span class="line"> </span><br><span class="line">  <span class="comment">/** Returns a node by its id. */</span></span><br><span class="line">  <span class="function"><span class="keyword">const</span> HeapGraphNode* <span class="title">GetNodeById</span><span class="params">(SnapshotObjectId id)</span> <span class="keyword">const</span></span>;</span><br><span class="line"> </span><br><span class="line"> </span><br><span class="line">  .......</span><br><span class="line"> </span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">   * Prepare a serialized representation of the snapshot. The result</span></span><br><span class="line"><span class="comment">   * is written into the stream provided in chunks of specified size.</span></span><br><span class="line"><span class="comment">   * The total length of the serialized snapshot is unk，nown in</span></span><br><span class="line"><span class="comment">   * advance, it can be roughly equal to JS heap size (that means,</span></span><br><span class="line"><span class="comment">   * it can be really big - tens of megabytes).</span></span><br><span class="line"><span class="comment">   *</span></span><br><span class="line"><span class="comment">   * For the JSON format, heap contents are represented as an object</span></span><br><span class="line"><span class="comment">   * with the following structure:</span></span><br><span class="line"><span class="comment">   *</span></span><br><span class="line"><span class="comment">   *  &#123;</span></span><br><span class="line"><span class="comment">   *    snapshot: &#123;</span></span><br><span class="line"><span class="comment">   *      title: &quot;...&quot;,</span></span><br><span class="line"><span class="comment">   *      uid: nnn,</span></span><br><span class="line"><span class="comment">   *      meta: &#123; meta-info &#125;,</span></span><br><span class="line"><span class="comment">   *      node_count: nnn,</span></span><br><span class="line"><span class="comment">   *      edge_count: nnn</span></span><br><span class="line"><span class="comment">   *    &#125;,</span></span><br><span class="line"><span class="comment">   *    nodes: [nodes array],</span></span><br><span class="line"><span class="comment">   *    edges: [edges array],</span></span><br><span class="line"><span class="comment">   *    strings: [strings array]</span></span><br><span class="line"><span class="comment">   *  &#125;</span></span><br><span class="line"><span class="comment">   *</span></span><br><span class="line"><span class="comment">   * Nodes reference strings, other nodes, and edges by their indexes</span></span><br><span class="line"><span class="comment">   * in corresponding arrays.</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">Serialize</span><span class="params">(OutputStream* stream,</span></span></span><br><span class="line"><span class="function"><span class="params">                 SerializationFormat format = kJSON)</span> <span class="keyword">const</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>其中主要包括的是snapshot的metadata(节点个数之类信息)，nodes就代表其中的节点，edges代表节点之间的连接，strings保存来所有字符串，nodes和edges中不会直接保存字符串，而是strings中的索引。<br>至于node和edge数组内部是什么结构，是怎么关联起来的可以查阅heap-snapshot-generator.h, 以后有空再补充，这里着重讲检测算法。</p>
+<h2 id="检测过程"><a href="#检测过程" class="headerlink" title="检测过程"></a>检测过程</h2><p>整个检测工具的完整流程应该如下图所示:<br><img src="https://user-images.githubusercontent.com/5572591/111950981-fd9a6a80-8b1d-11eb-9c8a-33efb0a2cf7b.png" alt="Image"><br>整个检测过程分6步</p>
+<ol>
+<li>首先输入的是基于puppeteer的自动化代码(即重复操作应用的某一功能)，并生成heapsnapshot。</li>
+<li>解析heapsnapshot, 如v8-profile.h中的注释写的一样，snapshot总长度是未知的，所以需要stream parser.</li>
+<li>生成多个snapshot之后计算leak path，leak path相当于是从根节点到泄漏点的路径，如第一个内存泄漏的例子path如图所示，其中type代表是edge的类型(详细可以看看v8-profile.h)<br><img src="https://user-images.githubusercontent.com/5572591/111950998-012df180-8b1e-11eb-8ccf-f41500a7b27c.png" alt="Image"></li>
+<li>我们算出某个应用的泄漏点可能不只一个，需要计算每个泄漏点的影响面，度量值有retainSize, shallowSize等。</li>
+<li>通过leak path改写应用代码(用acorn)，得到stack trace(目前还没有实现，具体什么方法之后会另写一篇说明)</li>
+</ol>
+<h2 id="Leak-Path"><a href="#Leak-Path" class="headerlink" title="Leak Path"></a>Leak Path</h2><p>整个工具的核心在于第三步: 计算leak path。<br>计算leak path主要分成两个部分</p>
+<ol>
+<li>bfsGrowth: 每个heap遍历(如果puppeteer重复次数是2遍，两个heap用oldHeap和newHeap来表示), 判断heap中每个节点的size是否在newHeap中大于oldHeap中，并记录在变量growStatus中。</li>
+<li>findLeakPaths: 根据heap中的节点关系和growStatus计算出path</li>
+</ol>
+<p>两个步骤的伪代码</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// bfsGrowth</span></span><br><span class="line"><span class="built_in">queue</span> = []</span><br><span class="line">newRootNode = newHeap.rootNode</span><br><span class="line">oldRootNode = oldHeap.rootNode</span><br><span class="line">enqueue(oldRootNode, newRootNode)</span><br><span class="line"><span class="keyword">while</span> <span class="built_in">queue</span>.length !== <span class="number">0</span>:</span><br><span class="line">    newNode, oldNode = dequeue()</span><br><span class="line">    <span class="comment">// getJSObjEdge计算node中的用户可见edge</span></span><br><span class="line">    newNode.growing = oldNode.growing || getJSObjEdge(newNode) &gt; getJSObjEdge(oldNode)</span><br><span class="line">    <span class="keyword">for</span> newSubNode, newEdge in newNode:</span><br><span class="line">        <span class="keyword">for</span> oldSubNode, oldEdge in oldNode:</span><br><span class="line">            <span class="keyword">if</span> newEdge == oldEdge:</span><br><span class="line">                enqueue(newSubNode, oldSubNode)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// findLeakPaths:</span></span><br><span class="line">pathVisited = []</span><br><span class="line"><span class="built_in">queue</span> = []</span><br><span class="line">enqueue(rootEdge)</span><br><span class="line">leakPath = []</span><br><span class="line"> </span><br><span class="line"><span class="keyword">while</span> <span class="built_in">queue</span>.length !== <span class="number">0</span>:</span><br><span class="line">    node = dequeue()</span><br><span class="line">    pathVisited.add(edge)</span><br><span class="line">    <span class="keyword">if</span> node.growing == <span class="literal">true</span>:</span><br><span class="line">        <span class="comment">// 从pathVisited中拿到root到node的path, 加入到leakPath中</span></span><br><span class="line">        leakPath.push(pathVisited.getPath())</span><br><span class="line">    <span class="keyword">for</span> edge in node:</span><br><span class="line">        enqueue(edge)</span><br></pre></td></tr></table></figure>
+
+<h2 id="getJSObjEdge"><a href="#getJSObjEdge" class="headerlink" title="getJSObjEdge"></a>getJSObjEdge</h2><p>(未完待续。。)</p>
+
+      </div>
+      
+      <footer class="post-footer">
+        
+        <nav class="post-nav"><a class="prev" href="/2020/02/08/%E5%85%A8%E6%99%AF%E8%AE%BE%E8%AE%A1%E6%8A%80%E6%9C%AF%E6%A6%82%E8%A7%88/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">全景设计技术概览</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    <a class="next" href="/2019/08/04/Locale%20%E5%85%A8%E7%AB%99%E9%85%8D%E7%BD%AE/">
+        <span class="next-text nav-default">Locale 全站配置</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav></footer>
+    </article></div><div class="comments" id="comments"></div></div>
+      </main>
+
+      <footer id="footer" class="footer"><div class="social-links"><a href="mailto:loujiayu7@gmail.com" class="iconfont icon-email" title="email"></a>
+        <a target="_blank" rel="noopener" href="https://github.com/loujiayu" class="iconfont icon-github" title="github"></a>
+        <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    </div><div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" target="_blank" rel="noopener" href="https://github.com/loujiayu">Even</a>
+  </span>
+</div>
+</footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div><script type="text/javascript" src="/lib/jquery/jquery.min.js"></script>
+  <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  <script type="text/javascript" src="/lib/fancybox/jquery.fancybox.pack.js"></script>
+  <script type="text/javascript" src="/js/src/even.js?v=2.11.0"></script>
+</body>
+</html>

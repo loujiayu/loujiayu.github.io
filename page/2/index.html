@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+<link rel="alternate" href="/default" title="ljy" ><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.11.0" />
+<link rel="canonical" href="http://example.com/page/2/"/>
+
+<link rel="stylesheet" type="text/css" href="/lib/fancybox/jquery.fancybox.css" />
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.11.0" />
+
+<script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+<script>
+  window.config = {"leancloud":{"app_id":null,"app_key":null},"toc":true,"fancybox":true,"pjax":"","latex":false};
+</script>
+
+    <title>ljy</title>
+  <meta name="generator" content="Hexo 5.4.0"></head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">ljy</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list"><a href="/">
+        <li class="mobile-menu-item">Home
+          </li>
+      </a></ul>
+</nav>
+<div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">ljy</a>
+</div>
+
+<nav class="site-navbar"><ul id="menu" class="menu"><li class="menu-item">
+          <a class="menu-item-link" href="/">
+            Home
+            </a>
+        </li>
+      </ul></nav>
+</header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content"><section id="posts" class="posts"><article class="post">
+    <header class="post-header">
+      <h1 class="post-title"><a class="post-link" href="/2018/03/02/%E5%BC%80%E5%8F%91%E5%AE%9E%E6%97%B6web%E6%A1%86%E6%9E%B6/">开发实时web框架</a>
+        </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2018-03-02
+        </span></div>
+    </header>
+
+    <div class="post-content"><h3 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h3><p>之前的几个月一直在重写horizon.js, 目前应用于公司的项目，终于趋于稳定，所以决定抽空把整个框架代码从公司项目中抽离出来开源，源码地址,目前只是抽离了主干部分，未来会持续更新并完善下去，有兴趣的同学可以一起来参与进来。<br>关于horizon.js之前有些写过源码分析，需要了解的同学请去这个链接</p>
+<p>horizon.js虽然简单易用，但在日常开发过程中遇到了不少问题，随着项目的不断深入，逐渐跟不上需求，rethinkdb公司2016年破产后貌似已经不再对这个项目进行开发了，提PR都没人理。所以打算自己动手重写horizon。<br>整个框架的构成类似于horizon，并在此基础上增加了cache, subscribe管理, 断线重连，conflict merge等功能。</p>
+<h3 id="缺点与思考"><a href="#缺点与思考" class="headerlink" title="缺点与思考"></a>缺点与思考</h3><ul>
+<li>设计的不够灵活，由于团队不断扩大，涉及到多人协作，后续可能需要把一些service从主体中脱离出来，或加入plugin机制。目前考虑需要脱离的服务有database, cache, subscribe。</li>
+<li>目前的设计是浏览器和数据库的直连，遇上服务器端的需求就需要另写一堆冗余的代码来满足，未来需要加入一个中间层来做中转用。</li>
+</ul>
+
+        </div></article>
+      <article class="post">
+    <header class="post-header">
+      <h1 class="post-title"><a class="post-link" href="/2018/01/19/react%E4%B8%AD%E7%9A%84requestIdleCallback%E5%AE%9E%E7%8E%B0/">react中的requestIdleCallback实现</a>
+        </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2018-01-19
+        </span></div>
+    </header>
+
+    <div class="post-content"><p>React16引入了新的架构Fiber，使得React在reconciliation阶段可以被切分成多个小任务异步执行，Fiber的出现主要解决的是同步递归渲染造成的页面卡顿问题</p>
+          <div class="read-more">
+            <a href="/2018/01/19/react%E4%B8%AD%E7%9A%84requestIdleCallback%E5%AE%9E%E7%8E%B0/" class="read-more-link">Read more..</a>
+          </div>
+        </div></article>
+      <article class="post">
+    <header class="post-header">
+      <h1 class="post-title"><a class="post-link" href="/2017/08/10/Nodejs%E4%B8%AD%E7%9A%84ASYNC_CALL%E4%B8%8ESYNC_CALL/">Nodejs中的ASYNC_CALL与SYNC_CALL、</a>
+        </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-08-10
+        </span></div>
+    </header>
+
+    <div class="post-content"><p>在nodejs文档中经常见到类似xxSync之类的方法，相当于xx的同步版本，比如fs.read与fs.readSync，简单翻了下源码两者都调用了binding.read->uv_fs_read. 但为什么一个是同步一个是异步？本文就以fs.read为例子深入源码详细解读一下。</p>
+          <div class="read-more">
+            <a href="/2017/08/10/Nodejs%E4%B8%AD%E7%9A%84ASYNC_CALL%E4%B8%8ESYNC_CALL/" class="read-more-link">Read more..</a>
+          </div>
+        </div></article>
+      <article class="post">
+    <header class="post-header">
+      <h1 class="post-title"><a class="post-link" href="/2016/12/28/horizon.js%20%E6%BA%90%E7%A0%81%E9%80%9F%E8%A7%88/">horizon.js 源码速览</a>
+        </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2016-12-28
+        </span></div>
+    </header>
+
+    <div class="post-content"><p>horizon 是rethinkdb团队开发的后端框架，用于构建实时web app，使用rethinkdb作为默认数据库。</p>
+          <div class="read-more">
+            <a href="/2016/12/28/horizon.js%20%E6%BA%90%E7%A0%81%E9%80%9F%E8%A7%88/" class="read-more-link">Read more..</a>
+          </div>
+        </div></article>
+      <article class="post">
+    <header class="post-header">
+      <h1 class="post-title"><a class="post-link" href="/2016/06/26/%E5%85%B3%E4%BA%8EReact%20Perf/">关于React Perf</a>
+        </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2016-06-26
+        </span></div>
+    </header>
+
+    <div class="post-content"><p>浏览器性能优化总结为3句话：你期望以60帧／s的速度在浏览器中运行。这意味着只留给你16.7ms每帧，当你的javascript运行太长时间，它将经常导致不能相应用户事件，消耗太长时间而不能加载数据或是重渲染新数据。在大多数情况下，你不要对点击事件进行复杂的数据操作。</p>
+          <div class="read-more">
+            <a href="/2016/06/26/%E5%85%B3%E4%BA%8EReact%20Perf/" class="read-more-link">Read more..</a>
+          </div>
+        </div></article>
+      <nav class="pagination"><a class="prev" href="/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text">Prev</span>
+      </a>
+    </nav></section></div></div>
+      </main>
+
+      <footer id="footer" class="footer"><div class="social-links"><a href="mailto:loujiayu7@gmail.com" class="iconfont icon-email" title="email"></a>
+        <a target="_blank" rel="noopener" href="https://github.com/loujiayu" class="iconfont icon-github" title="github"></a>
+        <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    </div><div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" target="_blank" rel="noopener" href="https://github.com/loujiayu">Even</a>
+  </span>
+</div>
+</footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div><script type="text/javascript" src="/lib/jquery/jquery.min.js"></script>
+  <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  <script type="text/javascript" src="/lib/fancybox/jquery.fancybox.pack.js"></script>
+  <script type="text/javascript" src="/js/src/even.js?v=2.11.0"></script>
+</body>
+</html>

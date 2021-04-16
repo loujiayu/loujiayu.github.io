@@ -13,8 +13,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
 
-<meta name="description" content="在nodejs文档中经常见到类似xxSync之类的方法，相当于xx的同步版本，比如fs.read与fs.readSync，简单翻了下源码两者都调用了binding.read->uv_fs_read. 但为什么一个是同步一个是异步？本文就以fs.read为例子深入源码详细解读一下。"/><link rel="alternate" href="/default" title="ljy" ><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.11.0" />
-<link rel="canonical" href="http://example.com/2017/08/10/AsyncHooks/"/>
+<link rel="alternate" href="/default" title="ljy" ><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.11.0" />
+<link rel="canonical" href="http://example.com/archives/2020/10/"/>
 
 <link rel="stylesheet" type="text/css" href="/lib/fancybox/jquery.fancybox.css" />
 <link rel="stylesheet" type="text/css" href="/css/style.css?v=2.11.0" />
@@ -37,7 +37,8 @@
   window.config = {"leancloud":{"app_id":null,"app_key":null},"toc":true,"fancybox":true,"pjax":"","latex":false};
 </script>
 
-    <title>Nodejs中的ASYNC_CALL与SYNC_CALL、 - ljy</title>
+    <title>Archives - ljy
+  </title>
   <meta name="generator" content="Hexo 5.4.0"></head>
 
   <body><div id="mobile-navbar" class="mobile-navbar">
@@ -72,34 +73,25 @@
 
       <main id="main" class="main">
         <div class="content-wrapper">
-          <div id="content" class="content"><article class="post">
-    <header class="post-header">
-      <h1 class="post-title">Nodejs中的ASYNC_CALL与SYNC_CALL、
-        </h1>
-
-      <div class="post-meta">
-        <span class="post-time">
-          2017-08-10
-        </span></div>
-    </header>
-
-    <div class="post-content">
+          <div id="content" class="content"><section id="archive" class="archive"><div class="archive-title">
+          <span class="archive-post-counter">
+            15 Posts In Total
+          </span>
+        </div>
+      <div class="collection-title">
+            <h2 class="archive-year">2020</h2>
+          </div>
+        <div class="archive-post">
+        <span class="archive-post-time">
+          10-11
+          </span>
+        <span class="archive-post-title">
+          <a href="/2020/10/11/Observable%20vs%20Diff/" class="archive-post-link">
+            React Observable vs Diff
+          </a>
+        </span>
       </div>
-      
-      <footer class="post-footer">
-        
-        <nav class="post-nav"><a class="prev" href="/2018/01/19/react%E4%B8%AD%E7%9A%84requestIdleCallback%E5%AE%9E%E7%8E%B0/">
-        <i class="iconfont icon-left"></i>
-        <span class="prev-text nav-default">react中的requestIdleCallback实现</span>
-        <span class="prev-text nav-mobile">Prev</span>
-      </a>
-    <a class="next" href="/2017/08/10/Nodejs%E4%B8%AD%E7%9A%84ASYNC_CALL%E4%B8%8ESYNC_CALL/">
-        <span class="next-text nav-default">Nodejs中的ASYNC_CALL与SYNC_CALL、</span>
-        <span class="prev-text nav-mobile">Next</span>
-        <i class="iconfont icon-right"></i>
-      </a>
-    </nav></footer>
-    </article></div><div class="comments" id="comments"></div></div>
+    </section><nav class="pagination"></nav></div></div>
       </main>
 
       <footer id="footer" class="footer"><div class="social-links"><a href="mailto:loujiayu7@gmail.com" class="iconfont icon-email" title="email"></a>

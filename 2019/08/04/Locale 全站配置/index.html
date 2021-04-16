@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+<meta name="description" content="由于历史原因，用户locale缺乏统一的配置方式，链路管理方式，持久化方式，未能沉淀为有效的国际化基建能力，借这个机会调研一下业界通用的解决方案和核心逻辑。为之后的技术改造做准备。"/><link rel="alternate" href="/default" title="ljy" ><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.11.0" />
+<link rel="canonical" href="http://example.com/2019/08/04/Locale 全站配置/"/>
+
+<link rel="stylesheet" type="text/css" href="/lib/fancybox/jquery.fancybox.css" />
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.11.0" />
+
+<script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+<script>
+  window.config = {"leancloud":{"app_id":null,"app_key":null},"toc":true,"fancybox":true,"pjax":"","latex":false};
+</script>
+
+    <title>Locale 全站配置 - ljy</title>
+  <meta name="generator" content="Hexo 5.4.0"></head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">ljy</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list"><a href="/">
+        <li class="mobile-menu-item">Home
+          </li>
+      </a></ul>
+</nav>
+<div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">ljy</a>
+</div>
+
+<nav class="site-navbar"><ul id="menu" class="menu"><li class="menu-item">
+          <a class="menu-item-link" href="/">
+            Home
+            </a>
+        </li>
+      </ul></nav>
+</header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content"><article class="post">
+    <header class="post-header">
+      <h1 class="post-title">Locale 全站配置
+        </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2019-08-04
+        </span></div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BAlocale%E4%BF%A1%E6%81%AF%E5%AE%9A%E6%80%A7"><span class="toc-text">为locale信息定性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%87%E6%9D%86%E8%B0%83%E7%A0%94%EF%BC%88facebook%EF%BC%89"><span class="toc-text">标杆调研（facebook）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%94%A8%E6%88%B7%E8%AF%AD%E8%A8%80%E5%86%B3%E7%AD%96%E9%93%BE%E8%B7%AF%E5%BA%94%E5%BD%93%E6%98%AF%E4%BB%80%E4%B9%88%E6%A0%B7"><span class="toc-text">用户语言决策链路应当是什么样</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%8C%81%E4%B9%85%E5%8C%96%E9%80%BB%E8%BE%91"><span class="toc-text">持久化逻辑</span></a></li></ol>
+    </div>
+  </div><div class="post-content"><p>由于历史原因，用户locale缺乏统一的配置方式，链路管理方式，持久化方式，未能沉淀为有效的国际化基建能力，借这个机会调研一下业界通用的解决方案和核心逻辑。为之后的技术改造做准备。</p>
+<h2 id="为locale信息定性"><a href="#为locale信息定性" class="headerlink" title="为locale信息定性"></a>为locale信息定性</h2><ol>
+<li>在登陆用户场景下，用户的 locale 信息应当与用户的一般信息（如用户名、用户邮箱等）归于同一类进行持久化，无需“被决定”</li>
+<li>在未登录用户的场景下，用户的 locale 信息应当推测其最佳语言为所使用设备的最高权重语言，并以服务器所在地的语言为最终降级</li>
+</ol>
+<h2 id="标杆调研（facebook）"><a href="#标杆调研（facebook）" class="headerlink" title="标杆调研（facebook）"></a>标杆调研（facebook）</h2><p>本文也对 facebook 做了调研，观察表现如下：</p>
+<ol>
+<li>首次访问：根据浏览器的 Accept-Language 判断用户应当使用什么语言<ul>
+<li>当我的浏览器 Accept-Language header 值为“zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2”（中文权重 0.8），facebook 提供了中文版网页</li>
+<li>当我的浏览器 Accept-Language header 值为“en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7,zh-TW;q=0.6,ja;q=0.5”（英文权重 0.9），facebook 提供了英文版网页</li>
+<li>且在首页底部有明显的语言选择：点击这里选择语言后，facebook 会设置 locale cookie 为所切换的语言<br>  <img src="https://user-images.githubusercontent.com/5572591/109910421-02b88680-7ce3-11eb-95c0-6357ca0e972f.png" alt="Image"></li>
+</ul>
+</li>
+<li>登录账号后：根据用户的语言设置，即使我在未登录时的首页选用了日语（此时 locale cookie 为日语，但页面显示为英语）<ul>
+<li>且在用户主页显眼位置提供语言选择：<br>  <img src="https://user-images.githubusercontent.com/5572591/109910432-0e0bb200-7ce3-11eb-993d-142742d0d1cf.png" alt="Image"></li>
+</ul>
+</li>
+<li>登出账号后：facebook 会将此前登录用户的 locale 信息写入到浏览器 cookie，保证用户登出前后的 locale 一致性<br> <img src="https://user-images.githubusercontent.com/5572591/109910435-0fd57580-7ce3-11eb-8e41-c9c785ddf324.png" alt="Image"></li>
+</ol>
+<h2 id="用户语言决策链路应当是什么样"><a href="#用户语言决策链路应当是什么样" class="headerlink" title="用户语言决策链路应当是什么样"></a>用户语言决策链路应当是什么样</h2><p><img src="https://user-images.githubusercontent.com/5572591/109910510-3b586000-7ce3-11eb-80ba-f25e7ea9fec6.png" alt="Image"></p>
+<h2 id="持久化逻辑"><a href="#持久化逻辑" class="headerlink" title="持久化逻辑"></a>持久化逻辑</h2><ol>
+<li>调用 login 接口登录时，分 3 种情况<ul>
+<li>user 无持久化 locale 信息，客户端无 qh-locale cookie：user 登录后仍旧无持久化 locale 信息</li>
+<li>user 无持久化 locale 信息，客户端有 qh-locale cookie：user 登录后持久化 qh-locale 指定的 locale</li>
+<li>user 有持久化 locale 信息，无论客户端有没有 qh-locale cookie：user 登录后使用原有的 locale 信息，并在 login 接口 response 中设置         qh-locale 为用户原有的 locale 信息，使用与 qunhe-jwt 相同的 expires、domain 等配置</li>
+</ul>
+</li>
+<li>登录状态中<ul>
+<li>若用户在登录状态下设置了 qh-locale，UIC 使用最新的 qh-locale 进行持久化，此时 jwt cookie 中的 locale 可能与用户新设置的 qh-locale 不一致，但以 qh-locale 为准。<br>  <strong>这个逻辑有个代价</strong> 可能存在这样的情况，用户新设置的 qh-locale 已过期，但存储了旧 locale 信息的 jwt 尚未过期，导致用户此时访问的是 jwt 存储的旧 locale 设置，用户设置 qh-locale 后，我们立即 invalidate 旧 jwt 进行更新.</li>
+</ul>
+</li>
+<li>调用 logout 接口登出时，我们的逻辑下，qh-locale 通常总是存在，此步目前不实现</li>
+</ol>
+<p><em><strong>业务场景需要，前端设置cookie时，必须携带 SameSite=None;Secure</strong></em></p>
+
+      </div>
+      
+      <footer class="post-footer">
+        
+        <nav class="post-nav"><a class="prev" href="/2020/01/25/%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F%E5%B7%A5%E5%85%B7/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">js 内存泄漏检测算法</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    <a class="next" href="/2018/10/30/rxjs%E7%AE%80%E6%98%93%E5%AE%9E%E7%8E%B0/">
+        <span class="next-text nav-default">rxjs简易实现</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav></footer>
+    </article></div><div class="comments" id="comments"></div></div>
+      </main>
+
+      <footer id="footer" class="footer"><div class="social-links"><a href="mailto:loujiayu7@gmail.com" class="iconfont icon-email" title="email"></a>
+        <a target="_blank" rel="noopener" href="https://github.com/loujiayu" class="iconfont icon-github" title="github"></a>
+        <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    </div><div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" target="_blank" rel="noopener" href="https://github.com/loujiayu">Even</a>
+  </span>
+</div>
+</footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div><script type="text/javascript" src="/lib/jquery/jquery.min.js"></script>
+  <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  <script type="text/javascript" src="/lib/fancybox/jquery.fancybox.pack.js"></script>
+  <script type="text/javascript" src="/js/src/even.js?v=2.11.0"></script>
+</body>
+</html>

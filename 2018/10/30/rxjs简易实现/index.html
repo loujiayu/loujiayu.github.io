@@ -89,7 +89,7 @@
       <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#Observable%E4%B8%8EObserver"><span class="toc-text">Observable与Observer</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%94%AF%E6%8C%81unsubscribe"><span class="toc-text">支持unsubscribe</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Operator"><span class="toc-text">Operator</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Subject"><span class="toc-text">Subject</span></a></li></ol>
     </div>
   </div><div class="post-content"><p>rxjs是一个响应式编程工具，其中有三个重要的概念Observer, Observable, Subject.</p>
-<p>我在一开始使用的时候把它当黑盒子用，所以用得即死板又缩手缩脚，之后花了一些时间来研究它的内部实现，发现并没有想象中的那么复杂，下面就是rxjs的实现过程。本文源码[<a target="_blank" rel="noopener" href="https://github.com/loujiayu/prxjs]">https://github.com/loujiayu/prxjs]</a></p>
+<p>我在一开始使用的时候把它当黑盒子用，所以用得即死板又缩手缩脚，之后花了一些时间来研究它的内部实现，发现并没有想象中的那么复杂，下面就是rxjs的实现过程。<a target="_blank" rel="noopener" href="https://github.com/loujiayu/prxjs">本文源码</a></p>
 <h3 id="Observable与Observer"><a href="#Observable与Observer" class="headerlink" title="Observable与Observer"></a>Observable与Observer</h3><p>Observable成为可观察对象，Observer观察者，一开始接触rxjs的时候很容易弄混。<br>Observable最基本的创建方法就是使用create, 传入一个函数，我们暂时称为fn，这个fn会接受一个observer, subscribe就相当于是执行fn。</p>
 <figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> observable = Rx.Observable</span><br><span class="line">	.create(<span class="function"><span class="keyword">function</span>(<span class="params">observer</span>) </span>&#123;</span><br><span class="line">		observer.next(<span class="string">&#x27;A&#x27;</span>);</span><br><span class="line">		observer.next(<span class="string">&#x27;B&#x27;</span>);</span><br><span class="line">  &#125;)</span><br><span class="line">observable.subscribe(<span class="function"><span class="keyword">function</span>(<span class="params">value</span>) </span>&#123;</span><br><span class="line">	<span class="built_in">console</span>.log(value);</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
 <p>上面这段代码会依次打印出A, B.<br>subscribe传入的参数具备next, error, complete三个方法，如果传入的是一个function, 我们就回把这个function当作next处理，error和complete使用默认函数赋值，为了便于理解上面的subscribe相当于这面这段代码。</p>
@@ -122,7 +122,12 @@
       
       <footer class="post-footer">
         
-        <nav class="post-nav"><a class="next" href="/2018/09/23/parcel%E4%B8%AD%E7%9A%84%E5%A4%9A%E7%BA%BF%E7%A8%8B/">
+        <nav class="post-nav"><a class="prev" href="/2019/08/04/Locale%20%E5%85%A8%E7%AB%99%E9%85%8D%E7%BD%AE/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">Locale 全站配置</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    <a class="next" href="/2018/09/23/parcel%E4%B8%AD%E7%9A%84%E5%A4%9A%E7%BA%BF%E7%A8%8B/">
         <span class="next-text nav-default">parcel中的多线程</span>
         <span class="prev-text nav-mobile">Next</span>
         <i class="iconfont icon-right"></i>
