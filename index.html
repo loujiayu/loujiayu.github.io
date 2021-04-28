@@ -74,22 +74,6 @@
         <div class="content-wrapper">
           <div id="content" class="content"><section id="posts" class="posts"><article class="post">
     <header class="post-header">
-      <h1 class="post-title"><a class="post-link" href="/2020/12/08/%E5%A6%82%E4%BD%95%E5%81%9A%E5%B9%B3%E5%8F%B0%E5%8C%96%E7%9A%84%E6%80%9D%E8%80%83/">如何做平台化的思考</a>
-        </h1>
-
-      <div class="post-meta">
-        <span class="post-time">
-          2020-12-08
-        </span></div>
-    </header>
-
-    <div class="post-content"><p>由于酷家乐体系的行业属性，酷家乐的产品体系本身是不可能独立存在的。在行业的应用中，酷家乐产品必须要跟上下游或者其他产品打交道，不管是数据上还是功能上。</p>
-          <div class="read-more">
-            <a href="/2020/12/08/%E5%A6%82%E4%BD%95%E5%81%9A%E5%B9%B3%E5%8F%B0%E5%8C%96%E7%9A%84%E6%80%9D%E8%80%83/" class="read-more-link">Read more..</a>
-          </div>
-        </div></article>
-      <article class="post">
-    <header class="post-header">
       <h1 class="post-title"><a class="post-link" href="/2020/10/11/Observable%20vs%20Diff/">React Observable vs Diff</a>
         </h1>
 
@@ -99,7 +83,7 @@
         </span></div>
     </header>
 
-    <div class="post-content"><p>最近在看deno源码，遇到deno中使用FlatBuffers来处理js与rust，c++交互过程中的序列化和反序列化，对于我来说是个新的工具所以打算翻源码了解一下它的工作原理及deno使用它的理由。</p>
+    <div class="post-content"><p>当前主流的组件更新方式分为两类：Diff方式和Observable方式，本文就这两种更新机制做详细说明。</p>
           <div class="read-more">
             <a href="/2020/10/11/Observable%20vs%20Diff/" class="read-more-link">Read more..</a>
           </div>
@@ -231,6 +215,25 @@
           <div class="read-more">
             <a href="/2018/08/02/FlatBuffers%E5%8E%9F%E7%90%86/" class="read-more-link">Read more..</a>
           </div>
+        </div></article>
+      <article class="post">
+    <header class="post-header">
+      <h1 class="post-title"><a class="post-link" href="/2018/03/02/%E5%BC%80%E5%8F%91%E5%AE%9E%E6%97%B6web%E6%A1%86%E6%9E%B6/">开发实时web框架</a>
+        </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2018-03-02
+        </span></div>
+    </header>
+
+    <div class="post-content"><h3 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h3><p>之前的几个月一直在重写horizon.js, 目前应用于公司的项目，终于趋于稳定，所以决定抽空把整个框架代码从公司项目中抽离出来开源，源码地址,目前只是抽离了主干部分，未来会持续更新并完善下去，有兴趣的同学可以一起来参与进来。<br>关于horizon.js之前有些写过源码分析，需要了解的同学请去这个链接</p>
+<p>horizon.js虽然简单易用，但在日常开发过程中遇到了不少问题，随着项目的不断深入，逐渐跟不上需求，rethinkdb公司2016年破产后貌似已经不再对这个项目进行开发了，提PR都没人理。所以打算自己动手重写horizon。<br>整个框架的构成类似于horizon，并在此基础上增加了cache, subscribe管理, 断线重连，conflict merge等功能。</p>
+<h3 id="缺点与思考"><a href="#缺点与思考" class="headerlink" title="缺点与思考"></a>缺点与思考</h3><ul>
+<li>设计的不够灵活，由于团队不断扩大，涉及到多人协作，后续可能需要把一些service从主体中脱离出来，或加入plugin机制。目前考虑需要脱离的服务有database, cache, subscribe。</li>
+<li>目前的设计是浏览器和数据库的直连，遇上服务器端的需求就需要另写一堆冗余的代码来满足，未来需要加入一个中间层来做中转用。</li>
+</ul>
+
         </div></article>
       <nav class="pagination"><a class="next" href="/page/2/">
         <span class="next-text">Next</span>
